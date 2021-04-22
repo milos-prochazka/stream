@@ -1,9 +1,7 @@
 import 'dart:typed_data';
-
-
 import 'dart:convert';
-
 import 'dart:mirrors';
+import 'dart:math' as math;
 
 
 
@@ -241,7 +239,7 @@ class ByteArray implements TypedData
     @override
     int get offsetInBytes => 0;
 
-    static ByteData copy(ByteData src,int srcIndex, ByteData dst, int dstIndex, int count)
+    static ByteData copyByteData(ByteData src,int srcIndex, ByteData dst, int dstIndex, int count)
     {
         while (count>0)
         {
@@ -262,20 +260,31 @@ class ByteArray implements TypedData
         return dst;
     }
 
-    void _setCapacity(int capacity) 
+    void _capacityExtension(int capacity) 
     {
         if (capacity>_data.lengthInBytes)
         {
             capacity = capacity>2*_data.lengthInBytes ? capacity : 2*_data.lengthInBytes;
-            _data = copy(_data,0,ByteData(capacity),0,_data.lengthInBytes);
+            _data = copyByteData(_data,0,ByteData(capacity),0,_data.lengthInBytes);
         }
+    }
+
+    int get capacity => _data.lengthInBytes;
+
+    set capacity(int newCapacity)
+    {
+        if (newCapacity != _data.lengthInBytes)
+        {
+            var size = math.min(newCapacity,_data.lengthInBytes);
+            _data = copyByteData(_data,0,ByteData(newCapacity),0,size);
+        }  
     }
 
     // ---------------------------------------------------------------------------------------------------
   
     ByteArray writeUint8(int value)
     {
-        _setCapacity(writeOffset+1);
+        _capacityExtension(writeOffset+1);
         _data.setUint8(writeOffset++, value);
         if (writeOffset>_count)
         {
@@ -286,7 +295,7 @@ class ByteArray implements TypedData
 
     ByteArray setUint8(int value,int offset)
     {
-        _setCapacity(offset+1);
+        _capacityExtension(offset+1);
         _data.setUint8(offset, value);
         return this;
     }
@@ -305,7 +314,7 @@ class ByteArray implements TypedData
   
     ByteArray writeInt8(int value)
     {
-        _setCapacity(writeOffset+1);
+        _capacityExtension(writeOffset+1);
         _data.setInt8(writeOffset++, value);
         if (writeOffset>_count)
         {
@@ -316,7 +325,7 @@ class ByteArray implements TypedData
 
     ByteArray setInt8(int value,int offset)
     {
-        _setCapacity(offset+1);
+        _capacityExtension(offset+1);
         _data.setInt8(offset, value);
         return this;
     }
@@ -335,7 +344,7 @@ class ByteArray implements TypedData
   
     ByteArray writeUint16(int value,[Endian endian = Endian.big])
     {
-        _setCapacity(writeOffset+2);
+        _capacityExtension(writeOffset+2);
         _data.setUint16(writeOffset, value,endian);
         writeOffset += 2;
         if (writeOffset>_count)
@@ -347,7 +356,7 @@ class ByteArray implements TypedData
 
     ByteArray setUint16(int value,int offset,[Endian endian = Endian.big])
     {
-        _setCapacity(offset+2);
+        _capacityExtension(offset+2);
         _data.setUint16(offset, value, endian);
         return this;
     }
@@ -368,7 +377,7 @@ class ByteArray implements TypedData
   
     ByteArray writeInt16(int value,[Endian endian = Endian.big])
     {
-        _setCapacity(writeOffset+2);
+        _capacityExtension(writeOffset+2);
         _data.setInt16(writeOffset, value,endian);
         writeOffset += 2;
         if (writeOffset>_count)
@@ -380,7 +389,7 @@ class ByteArray implements TypedData
 
     ByteArray setInt16(int value,int offset,[Endian endian = Endian.big])
     {
-        _setCapacity(offset+2);
+        _capacityExtension(offset+2);
         _data.setInt16(offset, value, endian);
         return this;
     }
@@ -401,7 +410,7 @@ class ByteArray implements TypedData
   
     ByteArray writeUint32(int value,[Endian endian = Endian.big])
     {
-        _setCapacity(writeOffset+4);
+        _capacityExtension(writeOffset+4);
         _data.setUint32(writeOffset, value,endian);
         writeOffset += 4;
         if (writeOffset>_count)
@@ -413,7 +422,7 @@ class ByteArray implements TypedData
 
     ByteArray setUint32(int value,int offset,[Endian endian = Endian.big])
     {
-        _setCapacity(offset+4);
+        _capacityExtension(offset+4);
         _data.setUint32(offset, value, endian);
         return this;
     }
@@ -434,7 +443,7 @@ class ByteArray implements TypedData
   
     ByteArray writeInt32(int value,[Endian endian = Endian.big])
     {
-        _setCapacity(writeOffset+4);
+        _capacityExtension(writeOffset+4);
         _data.setInt32(writeOffset, value,endian);
         writeOffset += 4;
         if (writeOffset>_count)
@@ -446,7 +455,7 @@ class ByteArray implements TypedData
 
     ByteArray setInt32(int value,int offset,[Endian endian = Endian.big])
     {
-        _setCapacity(offset+4);
+        _capacityExtension(offset+4);
         _data.setInt32(offset, value, endian);
         return this;
     }
@@ -464,14 +473,34 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-    
+
+    void clear()
+    {
+        _count = 0;
+        readOffset = 0;
+        writeOffset = 0;
+
+    }
+
+    ByteBuffer asByteBuffer()
+    {
+        return _data.buffer;
+    }
+
+    ByteData asByteData([int offsetInBytes = 0, int? length])
+    {
+        return _data.buffer.asByteData(offsetInBytes,length ?? _count);
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
     void _hexChar(StringBuffer builder,int value)
     {
         value &= 0xf;
         builder.writeCharCode( (value<=9) ? (value+0x30) : (value-10+0x41));
     }
     
-    String toStringEx(int offset,int count,[String space=' '])
+    String toHexString(int offset,int count,[String space=' '])
     {
         var builder = StringBuffer();
 
@@ -493,7 +522,7 @@ class ByteArray implements TypedData
     @override
     String toString()
     {
-      return toStringEx(0, _count);
+      return toHexString(0, _count);
     }
 }
 
