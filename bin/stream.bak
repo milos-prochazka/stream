@@ -14,7 +14,7 @@ dynamic setDynamic(dynamic parent,dynamic value,List<dynamic> args,{ int argInde
         if (value is bool || value is double || value is String || value is int || value == null)
         {
             result = value;
-        }
+        } 
         else if (value is List || value is Set)
         {
             var array = <dynamic>[];
@@ -34,20 +34,20 @@ dynamic setDynamic(dynamic parent,dynamic value,List<dynamic> args,{ int argInde
             }
             result = obj;
         }
-        else
+        else 
         {
             var obj = <String,dynamic>{};
             var clsMirror = reflectClass(value.runtimeType);
             var mirror = reflect(value);
-
+            
             for(var member in clsMirror.declarations.values)
             {
-
+                
                 if (!member.isPrivate)
-                {
+                {                  
                     if (member is VariableMirror || (member as MethodMirror).isGetter)
                     {
-                        obj[MirrorSystem.getName(member.simpleName)] =
+                        obj[MirrorSystem.getName(member.simpleName)] = 
                             setDynamic(null, mirror.getField( member.simpleName).reflectee, args,argIndex:argIndex);
                     }
                 }
@@ -175,17 +175,17 @@ dynamic getDynamic(dynamic parent,dynamic defaultValue,List<dynamic> args,{ int 
 }
 
 
-Stream<String> lines(Stream<String> source) async*
+Stream<String> lines(Stream<String> source) async* 
 {
   // Stores any partial line from the previous chunk.
   var partial = '';
   // Wait until a new chunk is available, then process it.
-  await for (var chunk in source)
+  await for (var chunk in source) 
   {
     var lines = chunk.split('\n');
     lines[0] = partial + lines[0]; // Prepend partial line.
     partial = lines.removeLast(); // Remove new partial line.
-    for (var line in lines)
+    for (var line in lines) 
     {
       yield line; // Add lines to output stream.
     }
@@ -227,7 +227,7 @@ class ByteArray implements TypedData
     var readOffset = 0;
     var writeOffset = 0;
 
-    @override
+    @override  
     ByteBuffer get buffer => _data.buffer;
 
     @override
@@ -260,7 +260,7 @@ class ByteArray implements TypedData
         return dst;
     }
 
-    void _capacityExtension(int capacity)
+    void _capacityExtension(int capacity) 
     {
         if (capacity>_data.lengthInBytes)
         {
@@ -277,11 +277,11 @@ class ByteArray implements TypedData
         {
             var size = math.min(newCapacity,_data.lengthInBytes);
             _data = copyByteData(_data,0,ByteData(newCapacity),0,size);
-        }
+        }  
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeUint8(int value)
     {
         _capacityExtension(writeOffset+1);
@@ -311,7 +311,7 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeInt8(int value)
     {
         _capacityExtension(writeOffset+1);
@@ -341,7 +341,7 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeUint16(int value,[Endian endian = Endian.big])
     {
         _capacityExtension(writeOffset+2);
@@ -374,7 +374,7 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeInt16(int value,[Endian endian = Endian.big])
     {
         _capacityExtension(writeOffset+2);
@@ -407,7 +407,7 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeUint32(int value,[Endian endian = Endian.big])
     {
         _capacityExtension(writeOffset+4);
@@ -440,7 +440,7 @@ class ByteArray implements TypedData
     }
 
     // ---------------------------------------------------------------------------------------------------
-
+  
     ByteArray writeInt32(int value,[Endian endian = Endian.big])
     {
         _capacityExtension(writeOffset+4);
@@ -499,7 +499,7 @@ class ByteArray implements TypedData
         value &= 0xf;
         builder.writeCharCode( (value<=9) ? (value+0x30) : (value-10+0x41));
     }
-
+    
     String toHexString(int offset,int count,[String space=' '])
     {
         var builder = StringBuffer();
@@ -542,15 +542,15 @@ void main(List<String> arguments) async
   var inst = clsTest.fromVoid();
 
   var dd = setDynamic(null,inst,['jaja','paja',20]);
-
+  
   var qq = getDynamic(dd, null , ['jaja','paja',-1]);
 
 
-
+  
   var mirror = reflectClass(inst.runtimeType);
   var instanceMirror = reflect(inst);
   instanceMirror.setField(Symbol('paja'), 2345);
-
+  
   for(var declare in mirror.declarations.entries)
   {
     var decl = declare.value;
@@ -574,15 +574,15 @@ void main(List<String> arguments) async
 
   var str = genLines(300);
 
-  str.any((line)
+  str.any((line) 
   {
       print (line);
       return false;
   });
 
   var str1 = genLines(220);
-
-  str1.any((line)
+  
+  str1.any((line) 
   {
       print ('s1:$line');
       return false;
