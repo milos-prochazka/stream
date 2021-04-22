@@ -6,4 +6,5 @@
 build/
 
 # Directory created by dartdoc
+*.bak
 doc/api/
