@@ -228,8 +228,9 @@ void main(List<String> arguments) async
   //////////////////////////////////////////////////////////////////////////////////////////
   var ba = ByteArray();
 
-  ba.writeString("Žluva říhá", 0);
-  ba.count = 40;
+  ba.writeString("Žluva říhá", size: 20,nullTerminated: true);
+  var sx = ba.readString(20,nullTerminated: true,exactSize: false);
+
   /*for (int i=0; i<100; i++)
     ba.writeInt32(i);
 

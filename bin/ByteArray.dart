@@ -299,46 +299,63 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    int setString(String value,int offset, {Encoding? encoding,bool zeroEnding=false,int size=-1,})
+    int setString(String value,int offset, {Encoding? encoding,bool nullTerminated=false,int size=-1,})
     {
-
-        List<int> bytes = (encoding ?? utf8).encode(value);
-        if (zeroEnding)
-        {
-          bytes.add(0);
-        }
-
         if (size>0)
         {
-            if (size>bytes.length)
-            {
-              while (size>bytes.length)
+          List<int> bytes = (encoding ?? utf8).encode(value);
+
+          if (nullTerminated)
+          {
+              if (bytes.length+1>size)
               {
-                  bytes.add(0);
+                  setBytes(bytes.sublist(0,size-1),offset);
+                  _data.setInt8(size-1, 0);
               }
-            }
-            else if (size<bytes.length)
-            {
-              while (size<bytes.length)
+              else
               {
-                 bytes.removeLast();
+                  setBytes(bytes,offset);
+                  fillBytes(0, offset+bytes.length, size-bytes.length);
               }
-              if (zeroEnding)
+
+              return size;
+          }
+          else
+          {
+              if (bytes.length>size)
               {
-                  bytes.removeLast();
-                  bytes.add(0);
+                  setBytes(bytes.sublist(0,size),offset);
               }
-            }
+              else if (bytes.length<size)
+              {
+                  setBytes(bytes,offset);
+                  fillBytes(0, offset+bytes.length, size-bytes.length);
+              }
+              return size;
+          }
+        }
+        else
+        {
+          List<int> bytes = (encoding ?? utf8).encode(value);
+          setBytes(bytes,offset);
+
+          if (nullTerminated)
+          {
+              setUint8(0, offset+bytes.length);
+              return bytes.length+1;
+          }
+          else
+          {
+              return bytes.length;
+          }
+
         }
 
-        setBytes(bytes,offset);
-
-        return bytes.length;
     }
 
-    int writeString(String value,int offset, {Encoding? encoding,bool zeroEnding=false,int size=-1,})
+    int writeString(String value, {Encoding? encoding,bool nullTerminated=false,int size=-1,})
     {
-        var strLen = setString(value, writeOffset,encoding: encoding, zeroEnding: zeroEnding, size: size);
+        var strLen = setString(value, writeOffset,encoding: encoding, nullTerminated: nullTerminated, size: size);
 
         writeOffset += strLen;
         if (writeOffset>_count)
@@ -349,32 +366,51 @@ class ByteArray implements TypedData
         return strLen;
     }
 
-    String getString(int offset,int size,{Encoding? encoding,bool zeroEnding=false,})
+
+    String _getString(int offset,int size, Encoding? encoding,bool nullTerminated, bool exactSize, bool readMode)
     {
         var result = '';
+        var readSize = size;
 
-
-        if (zeroEnding)
+        if (nullTerminated)
         {
-            int endPoint = offset+size;
-
-            for(var i=offset;i<endPoint; i++)
-            {
-                if (_data.getUint8(i) == 0)
-                {
-                    size = i-offset;
-                    break;
-                }
-            }
+          int endPoint = offset+size;
+          for(var i=offset;i<endPoint; i++)
+          {
+              if (_data.getUint8(i) == 0)
+              {
+                  size = i-offset;
+                  if (!exactSize)
+                  {
+                    readSize = size+1;
+                  }
+                  break;
+              }
+          }
         }
 
         var data = _data.buffer.asUint8List(offset,math.min(size,_count-offset));
         result = (encoding ?? utf8).decode(data);
 
+        if (readMode)
+        {
+            readOffset = offset+readSize;
+        }
+
         return result;
 
     }
 
+
+    String getString(int offset,int size,{Encoding? encoding,bool zeroEnding=false,bool nullTerminated=false, bool exactSize=true})
+    {
+        return _getString(offset, size, encoding, nullTerminated, exactSize, false);
+    }
+
+    String readString(int size,{Encoding? encoding,bool zeroEnding=false,bool nullTerminated=false, bool exactSize=true})
+    {
+        return _getString(readOffset, size, encoding, nullTerminated, exactSize, true);
+    }
     // ---------------------------------------------------------------------------------------------------
 
     void clear()
