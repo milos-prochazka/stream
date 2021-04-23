@@ -1,8 +1,10 @@
  // ignore_for_file: omit_local_variable_types
 import 'dart:convert';
 import 'dart:mirrors';
+import 'dart:typed_data';
 
-import 'ByteArray.dart';
+import 'BxDocument.dart';
+import 'DynamicByteBuffer.dart';
 
 
 
@@ -221,14 +223,43 @@ class clsTest
     }
 }
 
+void test()
+{
+    var ba = DynamicByteBuffer(16);
+    ba.writeFloat64(3.332239);
+    var idx = ba.writeOffset;
+    ba.writeInt16(0x1234);
+    ba.writeInt8(0xcc);
+    ba.writeOffset+= idx+16;
+    ba.writeString("Žluva říhá", nullTerminated: true);
+    ba.count = 64 *((ba.count+63) ~/ 64);
+
+    print (ba.toString());
+    var v = ba.readFloat64();
+    ba.readOffset += 3;
+    var s = ba.readString(512,nullTerminated: true);
+    print ('$v $s');
+
+    ba = DynamicByteBuffer();
+
+    var bx = BxDocument();
+    bx.writeString('sssas');
+    bx.writeString('bbb');
+    bx.writeString('aaa');
+    bx.writeString('bbb');
+}
+
 
 void main(List<String> arguments) async
 {
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  var ba = ByteArray();
+  test();
+  var ba = DynamicByteBuffer();
 
-  ba.writeString("Žluva říhá", size: 20,nullTerminated: true);
+  ba.writeString("Žluva říhá", nullTerminated: true);
+  ba.writeInt8(0xcc);
+  ba.writeInt8(0xee);
   var sx = ba.readString(20,nullTerminated: true,exactSize: false);
 
   /*for (int i=0; i<100; i++)

@@ -5,12 +5,19 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 
-class ByteArray implements TypedData
+class DynamicByteBuffer implements TypedData
 {
-    var _data = ByteData(16);
+    static final Utf8Codec utf8 = Utf8Codec(allowMalformed: true);
+
+    late ByteData _data;
     var _count = 0;
     var readOffset = 0;
     var writeOffset = 0;
+
+    DynamicByteBuffer([int capacity=16])
+    {
+        _data = ByteData(math.max(16, capacity));
+    }
 
     @override
     ByteBuffer get buffer => _data.buffer;
@@ -68,6 +75,11 @@ class ByteArray implements TypedData
             capacity = capacity>2*_data.lengthInBytes ? capacity : 2*_data.lengthInBytes;
             _data = copyByteData(_data,0,ByteData(capacity),0,_data.lengthInBytes);
         }
+
+        if (capacity>_count)
+        {
+           _count = capacity;
+        }
     }
 
     int get capacity => _data.lengthInBytes;
@@ -78,26 +90,27 @@ class ByteArray implements TypedData
         {
             var size = math.min(newCapacity,_data.lengthInBytes);
             _data = copyByteData(_data,0,ByteData(newCapacity),0,size);
+            if (_count>newCapacity)
+            {
+                _count = newCapacity;
+            }
         }
     }
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeUint8(int value)
+    DynamicByteBuffer writeUint8(int value)
     {
         _expandCapacity(writeOffset+1);
         _data.setUint8(writeOffset++, value);
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setUint8(int value,int offset)
+    DynamicByteBuffer setUint8(int value,int offset)
     {
         _expandCapacity(offset+1);
         _data.setUint8(offset, value);
+
         return this;
     }
 
@@ -113,18 +126,14 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeInt8(int value)
+    DynamicByteBuffer writeInt8(int value)
     {
         _expandCapacity(writeOffset+1);
         _data.setInt8(writeOffset++, value);
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setInt8(int value,int offset)
+    DynamicByteBuffer setInt8(int value,int offset)
     {
         _expandCapacity(offset+1);
         _data.setInt8(offset, value);
@@ -143,19 +152,15 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeUint16(int value,[Endian endian = Endian.big])
+    DynamicByteBuffer writeUint16(int value,[Endian endian = Endian.big])
     {
         _expandCapacity(writeOffset+2);
         _data.setUint16(writeOffset, value,endian);
         writeOffset += 2;
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setUint16(int value,int offset,[Endian endian = Endian.big])
+    DynamicByteBuffer setUint16(int value,int offset,[Endian endian = Endian.big])
     {
         _expandCapacity(offset+2);
         _data.setUint16(offset, value, endian);
@@ -176,19 +181,15 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeInt16(int value,[Endian endian = Endian.big])
+    DynamicByteBuffer writeInt16(int value,[Endian endian = Endian.big])
     {
         _expandCapacity(writeOffset+2);
         _data.setInt16(writeOffset, value,endian);
         writeOffset += 2;
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setInt16(int value,int offset,[Endian endian = Endian.big])
+    DynamicByteBuffer setInt16(int value,int offset,[Endian endian = Endian.big])
     {
         _expandCapacity(offset+2);
         _data.setInt16(offset, value, endian);
@@ -209,19 +210,15 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeUint32(int value,[Endian endian = Endian.big])
+    DynamicByteBuffer writeUint32(int value,[Endian endian = Endian.big])
     {
         _expandCapacity(writeOffset+4);
         _data.setUint32(writeOffset, value,endian);
         writeOffset += 4;
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setUint32(int value,int offset,[Endian endian = Endian.big])
+    DynamicByteBuffer setUint32(int value,int offset,[Endian endian = Endian.big])
     {
         _expandCapacity(offset+4);
         _data.setUint32(offset, value, endian);
@@ -242,19 +239,15 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
-    ByteArray writeInt32(int value,[Endian endian = Endian.big])
+    DynamicByteBuffer writeInt32(int value,[Endian endian = Endian.big])
     {
         _expandCapacity(writeOffset+4);
         _data.setInt32(writeOffset, value,endian);
         writeOffset += 4;
-        if (writeOffset>_count)
-        {
-            _count = writeOffset;
-        }
         return this;
     }
 
-    ByteArray setInt32(int value,int offset,[Endian endian = Endian.big])
+    DynamicByteBuffer setInt32(int value,int offset,[Endian endian = Endian.big])
     {
         _expandCapacity(offset+4);
         _data.setInt32(offset, value, endian);
@@ -275,6 +268,122 @@ class ByteArray implements TypedData
 
     // ---------------------------------------------------------------------------------------------------
 
+    DynamicByteBuffer writeUint64(int value,[Endian endian = Endian.big])
+    {
+        _expandCapacity(writeOffset+4);
+        _data.setUint64(writeOffset, value,endian);
+        writeOffset += 8;
+        return this;
+    }
+
+    DynamicByteBuffer setUint64(int value,int offset,[Endian endian = Endian.big])
+    {
+        _expandCapacity(offset+8);
+        _data.setUint64(offset, value, endian);
+        return this;
+    }
+
+    int readUint64([Endian endian = Endian.big])
+    {
+        var result = _data.getUint64(readOffset,endian);
+        readOffset += 8;
+        return result;
+    }
+
+    int getUint64(int offset,[Endian endian = Endian.big])
+    {
+        return _data.getUint64(offset,endian);
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    DynamicByteBuffer writeInt64(int value,[Endian endian = Endian.big])
+    {
+        _expandCapacity(writeOffset+8);
+        _data.setInt64(writeOffset, value,endian);
+        writeOffset += 8;
+        return this;
+    }
+
+    DynamicByteBuffer setInt64(int value,int offset,[Endian endian = Endian.big])
+    {
+        _expandCapacity(offset+8);
+        _data.setInt64(offset, value, endian);
+        return this;
+    }
+
+    int readInt64([Endian endian = Endian.big])
+    {
+        var result = _data.getInt64(readOffset,endian);
+        readOffset += 8;
+        return result;
+    }
+
+    int getInt64(int offset,[Endian endian = Endian.big])
+    {
+        return _data.getInt64(offset,endian);
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    DynamicByteBuffer writeFloat32(double value,[Endian endian = Endian.big])
+    {
+        _expandCapacity(writeOffset+4);
+        _data.setFloat32(writeOffset, value,endian);
+        writeOffset += 4;
+        return this;
+    }
+
+    DynamicByteBuffer setFloat32(double value,int offset,[Endian endian = Endian.big])
+    {
+        _expandCapacity(offset+4);
+        _data.setFloat32(offset, value, endian);
+        return this;
+    }
+
+    double readFloat32([Endian endian = Endian.big])
+    {
+        var result = _data.getFloat32(readOffset,endian);
+        readOffset += 4;
+        return result;
+    }
+
+    double getFloat32(int offset,[Endian endian = Endian.big])
+    {
+        return _data.getFloat32(offset,endian);
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
+    DynamicByteBuffer writeFloat64(double value,[Endian endian = Endian.big])
+    {
+        _expandCapacity(writeOffset+8);
+        _data.setFloat64(writeOffset, value,endian);
+        writeOffset += 8;
+        return this;
+    }
+
+    DynamicByteBuffer setFloat64(double value,int offset,[Endian endian = Endian.big])
+    {
+        _expandCapacity(offset+8);
+        _data.setFloat32(offset, value, endian);
+        return this;
+    }
+
+    double readFloat64([Endian endian = Endian.big])
+    {
+        var result = _data.getFloat64(readOffset,endian);
+        readOffset += 8;
+        return result;
+    }
+
+    double getFloat64(int offset,[Endian endian = Endian.big])
+    {
+        return _data.getFloat64(offset,endian);
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+
     void setBytes(List<int> values,int offset)
     {
         _expandCapacity(offset+values.length);
@@ -282,6 +391,18 @@ class ByteArray implements TypedData
         {
           _data.setUint8(offset++, value);
         }
+
+        if (offset>_count)
+        {
+          _count = offset;
+        }
+    }
+
+    void writeBytes(List<int> values)
+    {
+        setBytes(values,writeOffset);
+        writeOffset+= values.length;
+
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -294,6 +415,10 @@ class ByteArray implements TypedData
         {
           _data.setUint8(offset++, value);
           count--;
+        }
+        if (offset>_count)
+        {
+            _count = offset;
         }
     }
 
@@ -401,7 +526,6 @@ class ByteArray implements TypedData
 
     }
 
-
     String getString(int offset,int size,{Encoding? encoding,bool zeroEnding=false,bool nullTerminated=false, bool exactSize=true})
     {
         return _getString(offset, size, encoding, nullTerminated, exactSize, false);
@@ -411,6 +535,7 @@ class ByteArray implements TypedData
     {
         return _getString(readOffset, size, encoding, nullTerminated, exactSize, true);
     }
+
     // ---------------------------------------------------------------------------------------------------
 
     void clear()
@@ -418,7 +543,6 @@ class ByteArray implements TypedData
         _count = 0;
         readOffset = 0;
         writeOffset = 0;
-
     }
 
     ByteBuffer asByteBuffer()
@@ -429,6 +553,19 @@ class ByteArray implements TypedData
     ByteData asByteData([int offsetInBytes = 0, int? length])
     {
         return _data.buffer.asByteData(offsetInBytes,length ?? _count);
+    }
+
+    List<int> toList()
+    {
+        var count = _data.lengthInBytes;
+        var result = <int>[count];
+
+        for (int i=0; i<count; i++)
+        {
+            result[i] = _data.getInt8(i);
+        }
+
+        return result;
     }
 
     // ---------------------------------------------------------------------------------------------------
